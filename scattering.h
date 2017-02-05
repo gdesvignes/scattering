@@ -1,0 +1,37 @@
+#include<vector>
+
+using namespace std;
+
+typedef struct {
+
+        int nchan;    /* Number of channels */
+	int nbin;
+
+        double period;
+        double DM;
+	double max_phase;
+
+	double **phase;
+	double **I;
+
+	double *rmsI;
+	double *freq;
+        double *scale;
+	double *efac;
+  double *cfreq;
+
+	double *r_sigma;
+	double *r_tau;
+	double *r_DM;
+	double *r_t0_inf;
+	double *r_gamma;
+  double *r_amp;
+  double *r_b;
+	double *lo, *hi;
+
+
+} MNStruct;
+
+MNStruct* init_struct(int nchan, double period, double DM, int nbin, vector< vector<double> > phase, vector<double> freq, vector< vector<double> >  I, vector<double> rmsI, vector<double> scale, vector<double> cfreq );
+void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *context);
+void ScatterLike2(double *Cube, int &ndim, int &npars, double &lnew, void *context);
