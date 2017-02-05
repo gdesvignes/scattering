@@ -37,22 +37,24 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
 // 	cerr << par->r_DM[0] << " "<< par->r_DM[1]<< endl;
 // 	cerr << par->r_t0_inf[0] << " "<< par->r_t0_inf[1]<< endl;
 
-	double sigma = Cube[0] * (par->r_sigma[1] - par->r_sigma[0]) + par->r_sigma[0];
-	double tau1 = Cube[1] * (par->r_tau[1] - par->r_tau[0]) + par->r_tau[0];
-	double DM = Cube[2] * (par->r_DM[1] - par->r_DM[0]) + par->r_DM[0];
-	double t0_inf = Cube[3] * (par->r_t0_inf[1] - par->r_t0_inf[0]) + par->r_t0_inf[0];
+	double sigma, t0_inf;
+
+	double tau1 = Cube[0] * (par->r_tau[1] - par->r_tau[0]) + par->r_tau[0];
+	double DM = Cube[1] * (par->r_DM[1] - par->r_DM[0]) + par->r_DM[0];
+	double A,b ;
 	double gamma = -4.0;
 
 	tau1 *= 360./par->period;
 	sigma *= 360./par->period;
 
-	int ii;
+	int ii, ichan=0;
 	int nchan = par->nchan;
 	double period = par->period;
+	int *chan_idx = par->chan_idx;
 	double *freq = par->freq;
 	double *rmsI = par->rmsI;
 	int nbin = par->nbin;
-
+	double cfreq = par->cfreq[0];
 
 	//cout << sigma << " " << tau1 << " " << DM << " " << t0_inf << " "<< nchan << " "<<period<<endl;
 
@@ -60,52 +62,42 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
 	double t1, t3, t5, t9, t10, t19, delay, T0, result;
 	double win_lo, win_hi;
 
-	for (unsigned int i = 0; i < nchan; i++) {
-	    double *I = par->I[i];
+	for (unsigned int jj = 0; jj < nchan.size(); jj++) { // Loop over files
+	  Cube[2 + ichan*2] *= (par->r_sigma[1] - par->r_sigma[0]) + par->r_sigma[0];
+	  sigma = [2 + ichan*2];
+          Cube[3 + ichan*2] *= (par->r_t0_inf[1] - par->r_t0_inf[0]) + par->r_t0_inf[0];
+	  t0_inf = Cube[3 + ichan*2];
 
-	    delay = DM * 4.14879e3 * (1./(par->freq[i]*par->freq[i])); // delay in s
-	    tau = tau1 * pow((par->freq[i]*1e-3), gamma);
-
-	    // cerr << sigma << " " << tau << " " << DM << " " << t0_inf << " "<< nchan << " "<<period<<endl;
-	
+	  for (unsigned int i = 0; i < chan_idx[j]; i++) {
+	    double *I = par->I[ichan];
+	    delay = DM * 4.14879e3 * (1./(par->freq[ichan]*par->freq[ichan])); // delay in s
+	    tau = tau1 * pow((par->freq[ichan]*1e-3), gamma);
+	    
 	    T0 = t0_inf + delay/period * 360.; // T0 in deg
-	    //cerr << T0 << endl;
-	    T0 -= DM * 4.14879e3 * (1./(par->freq[nchan-1]*par->freq[nchan-1])) / period * 360.;
-	    //cerr << T0 << endl;
+	    T0 -= DM * 4.14879e3 * (1./(cfreq*cfreq)) / period * 360.; // TODO
 
 	    while (T0 < 100) T0+=360.;
 	    while (T0 > 620.) T0-=360;
-	    //cerr << delay << " "<< tau << " " << T0 << endl;
 
-	    double A = Cube[4+i*2] * (par->r_amp[1] - par->r_amp[0]) + par->r_amp[0];
-	    double b = Cube[5+i*2] * (par->r_b[1] - par->r_b[0]) + par->r_b[0];
+	    Cube[4+i*2 + ichan*2] *= (par->r_amp[1] - par->r_amp[0]) + par->r_amp[0];
+	    A = Cube[5+i*2 + ichan*2];
+	    Cube[5+i*2 + ichan*2] *= (par->r_b[1] - par->r_b[0]) + par->r_b[0];
+	    b = Cube[5+i*2 + ichan*2];
 
-
-	    //delay = DM * 4.14879e3 * (1./(par->freq[i]*par->freq[i])) / period * 360.; // Delay in deg
-	    double win = 80;
+	    double win = 80; // Set a restricted window for chi**2 calculation 
 	    win_lo = T0 - win / 3.; win_hi = T0 + win / 2.;
-	    //cerr << "Win: "<< win_lo << " "<< win_hi << endl;
 	    while (win_lo > 540) win_lo -= 360;  while (win_hi > 540) win_hi -= 360;
-	    
-	    //cerr << "Nbins: "<< (int)win_lo * nbin/360. << " "<< (int)win_hi* nbin/360 << endl;
-
-	    //cerr << (int)(win_lo * nbin/360.) << " "<< (int)(win_hi * nbin/360.) << endl;
 	    int lobin = (int)(win_lo * nbin/360.);
 	    int hibin = (int)(win_hi * nbin/360.);
 
-	    
-
 	    for (unsigned int j = lobin; j < hibin; j++) {
-	    //for (unsigned int j = 0; j < 2* nbin; j++) {
-      	      ii = j;
+	      ii = j;
 	      while(ii>=nbin) ii -= nbin;
-	      //cerr << "j: "<< j << endl;
-	      //cerr << par->rmsI[i] << endl;
-	      //cout << x[0]  << " " << T0 << endl;
+	      
 	      double dt = (j*360./(double)nbin - T0) ;
 		while (dt < 100) dt+=360.;
 		while (dt > 180.) dt-=360.;
-
+		
 		t1 = tau * dt;
 		t3 = sigma * sigma;
 		t5 = tau * tau;
@@ -113,29 +105,18 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
 		t10 = 1.77245385090552;
 		t19 = erf((0.2e1 * t1 - t3) / sigma / tau / 0.2e1);
 		result = (A*t9 * t10 * sigma * (t19 + 0.1e1) / 0.2e1+b);
-
-		chi += pow((I[ii] - result)* par->scale[i] / par->rmsI[i], 2); 
-		//cerr << t1 << " " << t3 << " " << t5 << " " << t9 << endl;
-		//cerr <<i << " "<< j << " " << result << " "<< I[ii]<<  " Freq: "<< par->freq[i] << " Chi: "<< chi << endl;
-		//exit(0);
+		chi += pow((I[ii] - result)* par->scale[ichan] / par->rmsI[ichan], 2); 
 	    }
+	    ichan++;
+	  }
 	}
 
-	
-	Cube[0] = Cube[0] * (par->r_sigma[1] - par->r_sigma[0]) + par->r_sigma[0];
-	Cube[1] = Cube[1] * (par->r_tau[1] - par->r_tau[0]) + par->r_tau[0];
-	Cube[2] = Cube[2] * (par->r_DM[1] - par->r_DM[0]) + par->r_DM[0];
-	Cube[3] = Cube[3] * (par->r_t0_inf[1] - par->r_t0_inf[0]) + par->r_t0_inf[0];
-	for (unsigned int i = 0; i < par->nchan; i++) {
-	    Cube[4+i*2] = Cube[4+i*2] * (par->r_amp[1] - par->r_amp[0]) + par->r_amp[0];
-	    Cube[5+i*2] = Cube[5+i*2] * (par->r_b[1] - par->r_b[0]) + par->r_b[0];
-        }
+	Cube[0] = tau1;
+	Cube[1] = DM;
 
 	if (isnan(chi) || isinf(chi))
 	  lnew=-pow(10.0,200);
 	else
 	  lnew = -chi/2;
 
-	//cerr << lnew << endl;
-	//exit(0);
 }
