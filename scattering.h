@@ -10,7 +10,7 @@ typedef struct {
   double period;
   double DM;
   double max_phase;
-  
+  int nfiles;  
   int *chan_idx;
   double **phase;
   double **I;

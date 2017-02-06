@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include <mpi.h>
 #include "multinest.h"
 #include "scattering.h"
 #include "Parameters.h"
@@ -111,19 +112,28 @@ int main(int argc, char *argv[])
 	int fb = 1;					// need feedback on standard output?
 	int resume = 1;					// resume from a previous job?
 	int outfile = 1;				// write output files?
-	int initMPI = 1;				// initialize MPI routines?, relevant only if compiling with MPI
+	int initMPI = 0;				// initialize MPI routines?, relevant only if compiling with MPI
 							// set it to F if you want your main program to handle MPI initialization
 	double logZero = -1E90;				// points with loglike < logZero will be ignored by MultiNest
 	int maxiter = 0;				// max no. of iterations, a non-positive value means infinity. MultiNest will terminate if either it 
 							// has done max no. of iterations or convergence criterion (defined through tol) has been satisfied
 	void *context = 0;				// not required by MultiNest, any additional information user wants to pass
-
+	int nbin;
 	int ichan = 0;
 	int bscrunch = 1;
 	int nchan = 8;
+	double DM, period;
 	vector< vector<double> > phase, I;
-	int nfiles = argc - 1;
 
+	int rank, size;
+        MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+	//if (rank==0) {
+
+	int nfiles = argc - 1;
+	cerr << "Nfiles = "<< nfiles<< endl;	
 	param p;
         cerr << "Reading parameters" << endl;
         int rv = readParameters(&p, "config.txt");
@@ -140,13 +150,13 @@ int main(int argc, char *argv[])
 	vector <int> chan_idx;
 	vector <double> RMS_I;
 	vector <double> scale;
-	vector <double> cfreq;
+	vector <double> cfreq, freq;
 
 	chan_idx.resize(nfiles);
 	phase.resize(nchan * nfiles);
 	I.resize(nchan * nfiles);
 
-	for (jj=0; jj=nfiles; jj++) {
+	for (int jj=0; jj<nfiles; jj++) {
 
 	  nPar = 2 + (2 + nchan * 2) * nfiles; // DM and scattering are assumed to be constant here; width, phase are profile dependent 
 	  ndims = nPar;
@@ -163,21 +173,17 @@ int main(int argc, char *argv[])
 	  archive->fscrunch_to_nchan(nchan);
 	  if (bscrunch > 1) archive->bscrunch(bscrunch);
 	  //int nchan = archive->get_nchan();
-	  int nbin = archive->get_nbin();
-	  double DM = archive->get_dispersion_measure();
+	  nbin = archive->get_nbin();
+	  DM = archive->get_dispersion_measure();
 	  cerr << nbin<< " "<< DM << endl;
-	  vector<double> freq;
 	  if( archive->get_state() != Signal::Stokes) archive->convert_state(Signal::Stokes);
 	  archive->remove_baseline();
 	  cfreq.push_back(archive->get_centre_frequency());
 	  cerr << "Finished reading file"<< endl;
 	
-
-	  Reference::To<Archive> scr_archive = archive->clone();
-
 	  // Get Data
 	  Pulsar::Integration* integration = archive->get_Integration(0);
-	  double period = integration->get_folding_period();
+	  period = integration->get_folding_period();
 
 	  vector< vector< double > > std_variance;
 	  integration->baseline_stats (0, &std_variance);

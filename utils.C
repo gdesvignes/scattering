@@ -6,7 +6,7 @@
 
 using namespace std;
 
-MNStruct* init_struct(vector<double> chan_idx, double period, double DM, int nbin, vector< vector<double> > phase, vector<double> freq, vector< vector<double> > I, vector<double> rmsI, vector<double> scale, vector<double> cfreq) {
+MNStruct* init_struct(vector<int> chan_idx, double period, double DM, int nbin, vector< vector<double> > phase, vector<double> freq, vector< vector<double> > I, vector<double> rmsI, vector<double> scale, vector<double> cfreq) {
 
 	// Init struct
 	MNStruct* MNS = (MNStruct*)malloc(sizeof(MNStruct));
@@ -15,7 +15,7 @@ MNStruct* init_struct(vector<double> chan_idx, double period, double DM, int nbi
 	MNS->period = period;
 	MNS->DM = DM;
 	int nchan = 0;
-	for (int i=0; i< nfiles; i++) nchan += chand_idx[i];
+	for (int i=0; i< nfiles; i++) nchan += chan_idx[i];
 	MNS->nchan =  nchan;
 
 	MNS->chan_idx = (int *)malloc(nfiles * sizeof(int));
@@ -30,7 +30,7 @@ MNStruct* init_struct(vector<double> chan_idx, double period, double DM, int nbi
 	MNS->I = (double **)malloc(nchan * sizeof(double *));
 
 
-	for (int i=0; i<nfiles; i++) MNS->chan_idx[i] = chan_id[i];
+	for (int i=0; i<nfiles; i++) MNS->chan_idx[i] = chan_idx[i];
 	for (int i=0; i<nchan; i++) {
 		MNS->phase[i] = (double *)malloc(nbin * sizeof(double));
 		MNS->I[i] = (double *)malloc(nbin * sizeof(double));
@@ -38,6 +38,7 @@ MNStruct* init_struct(vector<double> chan_idx, double period, double DM, int nbi
 		MNS->scale[i] = scale[i];
 
 	}
+	MNS->nfiles = nfiles;
 		
 	cout << "Malloc finished" << endl;
 
