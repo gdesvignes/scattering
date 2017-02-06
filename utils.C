@@ -24,7 +24,7 @@ MNStruct* init_struct(vector<int> chan_idx, double period, double DM, int nbin, 
 	MNS->scale = (double *)malloc(nchan * sizeof(double));
 	MNS->lo = (double *)malloc(nchan * sizeof(double));
 	MNS->hi = (double *)malloc(nchan * sizeof(double));
-	MNS->cfreq = (double *)malloc(cfreq.size() * sizeof(double));
+	MNS->cfreq = (double *)malloc(nfiles * sizeof(double));
 
 	MNS->phase = (double **)malloc(nchan * sizeof(double *));
 	MNS->I = (double **)malloc(nchan * sizeof(double *));
@@ -42,7 +42,7 @@ MNStruct* init_struct(vector<int> chan_idx, double period, double DM, int nbin, 
 		
 	cout << "Malloc finished" << endl;
 
-	for (int i=0; i<cfreq.size() ; i++) MNS->cfreq[i] = cfreq[i];
+	for (int i=0; i<nfiles ; i++) MNS->cfreq[i] = cfreq[i];
 	
 	// Assign data
 	for (int i=0; i<nchan; i++) {

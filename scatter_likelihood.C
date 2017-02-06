@@ -46,12 +46,12 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
 
 	double tau1 = Cube[0];
 	double DM = Cube[1];
-	tau1 = 2;
+	tau1 = 2; // GD
 	tau1 =  Cube[0] * 360./par->period;
-	DM = 1780;
+	DM = 1780; // GD
 
 	int ii, ichan=0;
-	int nchan = par->nchan;
+	//int nchan = par->nchan;
 	double period = par->period;
 	int *chan_idx = par->chan_idx;
 	double *freq = par->freq;
@@ -72,8 +72,8 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
           Cube[3 + ichan*2] = Cube[3 + ichan*2] * (par->r_t0_inf[1] - par->r_t0_inf[0]) + par->r_t0_inf[0];
 	  t0_inf = Cube[3 + ichan*2];
 
-	  t0_inf = 329;
-	  sigma = 0.008 * 360/period;
+	  t0_inf = 329; // GD
+	  sigma = 0.008 * 360/period; // GD
 
 	  for (unsigned int i = 0; i < chan_idx[jj]; i++) {
 	    double *I = par->I[ichan];
@@ -93,9 +93,9 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
 	    Cube[5+i*2 + ichan*2] = Cube[5+i*2 + ichan*2] * (par->r_b[1] - par->r_b[0]) + par->r_b[0];
 	    b = Cube[5+i*2 + ichan*2];
 
-	    A = 3; b =0.;
+	    A = 3; b =0.; // GD
 
-	    double win = 80; // Set a restricted window for chi**2 calculation 
+	    double win = 60; // Set a restricted window for chi**2 calculation 
 	    win_lo = T0 - win / 3.; win_hi = T0 + win / 2.;
 	    while (win_lo > 540) win_lo -= 360;  while (win_hi > 540) win_hi -= 360;
 	    int lobin = (int)(win_lo * nbin/360.);
@@ -120,7 +120,7 @@ void ScatterLike(double *Cube, int &ndim, int &npars, double &lnew, void *contex
 	      result = (A*t9 * t10 * sigma * (t19 + 0.1e1) / 0.2e1+b);
 	      chi += pow((I[ii] - result)* par->scale[ichan] / par->rmsI[ichan], 2); 
 	      cout << jj <<  " " << i << " "<< ii << " " << I[ii] << " " << chi <<endl; 
-	      //printf(" %lf %lf %lf %lf\n", t1,t3,t5,t9);
+	      printf(" %lf %lf %lf %lf\n", t1,t3,t5,t9);
 	      //cout << I[ii] << "  " << result << " " << chi << endl;
 	    }
 	    ichan++;
