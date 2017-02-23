@@ -240,6 +240,9 @@ int main(int argc, char *argv[])
 	
 	// calling MultiNest
 	nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike, dumper, context);
+
+	MPI_Finalize();
+
 }
 
 /***********************************************************************************************************************/
