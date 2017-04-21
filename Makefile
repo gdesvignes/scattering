@@ -9,7 +9,7 @@ scatternest:	scatternest.C
 	mpiicpc -Wall -std=c++11 -O3 -o scatternest scatternest.C Parameters.o utils.o scatter_likelihood.o `psrchive --cflags --libs` -L$(MULTINEST_DIR) -lnest3 `pkg-config --libs glib-2.0`
 
 scatternest_Nprof:	scatternest_Nprof.C
-	mpiicpc -c Parameters.C utils.C scatter_likelihood.C `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
+	mpiicpc -c Parameters.C utils.C MN_scatter_likelihood.C get_scatter_chi.C `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
 	mpiicpc -Wall -std=c++11 -O3 -o scatternest_Nprof scatternest_Nprof.C Parameters.o utils.o scatter_likelihood.o `psrchive --cflags --libs` -L$(MULTINEST_DIR) -lnest3 `pkg-config --libs glib-2.0`
 
 scatternestX:	scatternestX.C

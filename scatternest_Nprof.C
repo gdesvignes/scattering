@@ -23,7 +23,9 @@
 using namespace std;
 using namespace Pulsar;
 
-
+#ifdef HAVE_POLYCHORD
+#include "interfaces.hpp"
+#endif
 
 /************************************************* dumper routine ******************************************************/
 
@@ -241,6 +243,36 @@ int main(int argc, char *argv[])
 	// calling MultiNest
 	nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike, dumper, context);
 
+	
+#if 0
+	if () {
+	  Settings settings;
+
+	  settings.nDims         = ndims;
+	  settings.nDerived      = 1;
+	  settings.nlive         = 500;
+	  settings.num_repeats   = settings.nDims*5;
+	  settings.do_clustering = false;
+	  settings.precision_criterion = 1e-3;
+	  settings.base_dir      = "chains";
+	  settings.file_root     = "test";
+	  settings.write_resume  = false;
+	  settings.read_resume   = false;
+	  settings.write_live    = true;
+	  settings.write_dead    = false;
+	  settings.write_stats   = false;
+	  settings.equals        = true;
+	  settings.posteriors    = true;
+	  settings.cluster_posteriors = false;
+	  settings.feedback      = 1;
+	  settings.update_files  = settings.nlive;
+	  settings.boost_posterior= 5.0;
+
+	  setup_loglikelihood();
+	  run_polychord(loglikelihood, prior, settings) ;
+
+	}
+#endif
 	MPI_Finalize();
 
 }
