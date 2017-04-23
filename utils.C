@@ -10,7 +10,8 @@ MNStruct* init_struct(vector<int> chan_idx, double period, double DM, int nbin, 
   
   // Init struct
   MNStruct* MNS = (MNStruct*)malloc(sizeof(MNStruct));
-  
+
+  MNS->do_plot = 0;
   int nfiles = chan_idx.size();
   MNS->period = period;
   MNS->DM = DM;

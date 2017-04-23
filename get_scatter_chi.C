@@ -71,8 +71,7 @@ double get_scatter_chi(MNStruct *par) {
 	result = (A*t9 * t10 * sigma * (t19 + 0.1e1) / 0.2e1+b);
 	chi += pow((I[ii] - result)* par->scale[ichan] / par->rmsI[ichan], 2); 
 	//cout << jj <<  " " << i << " "<< ii << " " << I[ii] << " " << chi <<endl; 
-	//printf(" %lf %lf %lf %lf\n", t1,t3,t5,t9);
-	//cout << I[ii] << "  " << result << " " << chi << endl;
+	if (par->do_plot) cout << ichan << " "<< j << " " << I[ii] << "  " << result << " " << chi << endl;
 	//cout << ichan << " " << ii << " " << I[ii] << " " << result << endl;
       }
       ichan++;

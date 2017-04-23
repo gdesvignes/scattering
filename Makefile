@@ -5,13 +5,5 @@ scattering8:	scattering_nchn8.C
 	g++ -Wall -std=c++11 -O3 -o scattering8 scattering_nchn8.C `root-config --cflags --glibs` `psrchive --cflags --libs`
 
 scatternest:	scatternest.C
-	mpiicpc -c Parameters.C utils.C scatter_likelihood.C `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
-	mpiicpc -Wall -std=c++11 -O3 -o scatternest scatternest.C Parameters.o utils.o scatter_likelihood.o `psrchive --cflags --libs` -L$(MULTINEST_DIR) -lnest3 `pkg-config --libs glib-2.0`
-
-scatternest_Nprof:	scatternest_Nprof.C
-	mpiicpc -c Parameters.C utils.C MN_scatter_likelihood.C get_scatter_chi.C `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
-	mpiicpc -Wall -std=c++11 -O3 -o scatternest_Nprof scatternest_Nprof.C Parameters.o utils.o scatter_likelihood.o `psrchive --cflags --libs` -L$(MULTINEST_DIR) -lnest3 `pkg-config --libs glib-2.0`
-
-scatternestX:	scatternestX.C
-	mpiicpc -c Parameters.C utils.C scatter_likelihood2.C `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
-	mpiicpc -Wall -std=c++11 -O3 -o scatternestX scatternestX.C Parameters.o utils.o scatter_likelihood2.o `psrchive --cflags --libs` -L$(MULTINEST_DIR) -lnest3 `pkg-config --libs glib-2.0`
+	mpiicpc -c Parameters.C utils.C scatter_likelihood_MN.C get_scatter_chi.C read_MN_results.C `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
+	mpiicpc -Wall -std=c++11 -O3 -o scatternest scatternest.C Parameters.o utils.o scatter_likelihood_MN.o get_scatter_chi.o read_MN_results.o `psrchive --cflags --libs` -L$(MULTINEST_DIR) -lnest3 `pkg-config --libs glib-2.0`

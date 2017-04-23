@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include <mpi.h>
 #include "multinest.h"
 #include "scattering.h"
 #include "Parameters.h"
@@ -22,32 +23,11 @@
 using namespace std;
 using namespace Pulsar;
 
-
+#ifdef HAVE_POLYCHORD
+#include "interfaces.hpp"
+#endif
 
 /************************************************* dumper routine ******************************************************/
-
-// The dumper routine will be called every updInt*10 iterations
-// MultiNest doesn not need to the user to do anything. User can use the arguments in whichever way he/she wants
-//
-//
-// Arguments:
-//
-// nSamples 						= total number of samples in posterior distribution
-// nlive 						= total number of live points
-// nPar 						= total number of parameters (free + derived)
-// physLive[1][nlive * (nPar + 1)] 			= 2D array containing the last set of live points (physical parameters plus derived parameters) along with their loglikelihood values
-// posterior[1][nSamples * (nPar + 2)] 			= posterior distribution containing nSamples points. Each sample has nPar parameters (physical + derived) along with the their loglike value & posterior probability
-// paramConstr[1][4*nPar]:
-// paramConstr[0][0] to paramConstr[0][nPar - 1] 	= mean values of the parameters
-// paramConstr[0][nPar] to paramConstr[0][2*nPar - 1] 	= standard deviation of the parameters
-// paramConstr[0][nPar*2] to paramConstr[0][3*nPar - 1] = best-fit (maxlike) parameters
-// paramConstr[0][nPar*4] to paramConstr[0][4*nPar - 1] = MAP (maximum-a-posteriori) parameters
-// maxLogLike						= maximum loglikelihood value
-// logZ							= log evidence value from the default (non-INS) mode
-// INSlogZ						= log evidence value from the INS mode
-// logZerr						= error on log evidence value
-// context						void pointer, any additional information
-
 void dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSlogZ, double &logZerr, void *context)
 {
 	// convert the 2D Fortran arrays to C++ arrays
@@ -111,123 +91,120 @@ int main(int argc, char *argv[])
 	int fb = 1;					// need feedback on standard output?
 	int resume = 1;					// resume from a previous job?
 	int outfile = 1;				// write output files?
-	int initMPI = 1;				// initialize MPI routines?, relevant only if compiling with MPI
+	int initMPI = 0;				// initialize MPI routines?, relevant only if compiling with MPI
 							// set it to F if you want your main program to handle MPI initialization
 	double logZero = -1E90;				// points with loglike < logZero will be ignored by MultiNest
 	int maxiter = 0;				// max no. of iterations, a non-positive value means infinity. MultiNest will terminate if either it 
 							// has done max no. of iterations or convergence criterion (defined through tol) has been satisfied
 	void *context = 0;				// not required by MultiNest, any additional information user wants to pass
-
+	int nbin;
+	int ichan = 0;
 	int bscrunch = 1;
-	vector< int>  nchan;
-	nchan.resize(1);
-	nchan[0] = 8;
+	int nchan = 8;
+	double DM, period;
 	vector< vector<double> > phase, I;
 
+	int rank, size;
+        MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+	int rv = -1;
+	int nfiles = argc - 1;
 	param p;
-        cerr << "Reading parameters" << endl;
-        int rv = readParameters(&p, "config.txt");
-
-        if (rv == EXIT_SUCCESS) {
-          IS = p.IS;
-          nlive = p.nlive;
-          ceff = p.ceff;
-          efr = p.efr;
-          nchan[0] = p.nchan;
-          bscrunch = p.bscrunch;
+	if (rank==0) {
+	  cerr << "Nfiles = "<< nfiles<< endl;	
+	  cerr << "Reading parameters" << endl;
 	}
-
+	rv = readParameters(&p, "config.txt");
+	
+	if (rv == EXIT_SUCCESS) {
+	  IS = p.IS;
+	  nlive = p.nlive;
+	  ceff = p.ceff;
+	  efr = p.efr;
+	  nchan = p.nchan;
+	  bscrunch = p.bscrunch;
+	}
+	
+	vector <int> chan_idx;
 	vector <double> RMS_I;
 	vector <double> scale;
-	vector <double> cfreq;
+	vector <double> cfreq, freq;
 
-	nPar = 4 + nchan[0] * 2;
-	ndims = nPar;
+	chan_idx.resize(nfiles);
+	phase.resize(nchan * nfiles);
+	I.resize(nchan * nfiles);
 
-	strcpy(filename, argv[1]);
-	cerr << "Filename: "<< filename<< " " << nchan[0] << endl;
+	for (int jj=0; jj<nfiles; jj++) {
 
-	phase.resize(nchan[0]);
-        I.resize(nchan[0]);
+	  nPar = 2 + (2 + nchan * 2) * nfiles; // DM and scattering are assumed to be constant here; width, phase are profile dependent 
+	  ndims = nPar;
+	  
+	  strcpy(filename, argv[jj+1]);
+	  if (rank==0) cerr << "Filename: "<< filename<< " " << nchan << endl;
 
-	Reference::To< Archive > archive = Archive::load( filename );
-	if( !archive ) return -1;
-	cerr << "Archive loaded "<< endl;
 
-	archive->tscrunch();
-	archive->fscrunch_to_nchan(nchan[0]);
-	if (bscrunch > 1) archive->bscrunch(bscrunch);
-	//int nchan = archive->get_nchan();
-	int nbin = archive->get_nbin();
-	double DM = archive->get_dispersion_measure();
-	cerr << nbin<< " "<< DM << endl;
-	vector<double> freq;
-	//if( archive->get_state() != Signal::Stokes) archive->convert_state(Signal::Stokes);
-	archive->remove_baseline();
-	cfreq.push_back(archive->get_centre_frequency());
-	cerr << "Finished reading file"<< endl;
+	  Reference::To< Archive > archive = Archive::load( filename );
+	  if( !archive ) return -1;
+	  if (rank==0)  cerr << "Archive loaded "<< endl;
+	  
+	  archive->tscrunch();
+	  archive->fscrunch_to_nchan(nchan);
+	  if (bscrunch > 1) archive->bscrunch(bscrunch);
+	  //int nchan = archive->get_nchan();
+	  nbin = archive->get_nbin();
+	  DM = archive->get_dispersion_measure();
+	  cerr << nbin<< " "<< DM << endl;
+	  if( archive->get_state() != Signal::Stokes) archive->convert_state(Signal::Stokes);
+	  archive->remove_baseline();
+	  cfreq.push_back(archive->get_centre_frequency());
 	
+	  // Get Data
+	  Pulsar::Integration* integration = archive->get_Integration(0);
+	  period = integration->get_folding_period();
 
-	Reference::To<Archive> scr_archive = archive->clone();
-	//scr_archive->dedisperse();
-	//scr_archive->fscrunch();
-	//float max_phase = scr_archive->find_max_phase();
-	//double centre_freq = scr_archive->get_centre_frequency();
-	//archive->rotate_phase(-max_phase);
+	  vector< vector< double > > std_variance;
+	  integration->baseline_stats (0, &std_variance);
 
-	//cerr << "Centre freq.: "<< centre_freq << " Max phase: " << max_phase << endl; 
-
-	// Get Data
-	Pulsar::Integration* integration = archive->get_Integration(0);
-	double period = integration->get_folding_period();
-
-	vector< vector< double > > std_variance;
-	integration->baseline_stats (0, &std_variance);
-
-
-
-        if (rv == EXIT_SUCCESS) {
-	  strcpy(root, p.basename);
-	  sprintf(root, "%d_%d", (int)integration->get_epoch().intday(), (int)archive->get_centre_frequency());
-	  mkdir(root, 0700);
-	  sprintf(root, "%d_%d/chains-", (int)integration->get_epoch().intday(), (int)archive->get_centre_frequency());
-
-	  //have_efac = p.have_efac;                                                                                    
-
-
-	  // Copy config file                                                                                           
-	  sprintf(confname,"%s.config", root);
-	  ifstream  src("config.txt", ios::binary);
-	  ofstream  dst(confname,   ios::binary);
-	  dst << src.rdbuf();
-        }
-
-	int ichan = 0;
-	for (int ii=0; ii<archive->get_nchan(); ii++) {
-	  //cout << ichan << " " << integration->get_Profile(0,ichan)->get_weight() << endl ;
-	  if (integration->get_Profile(0,ii)->get_weight() == 0.0) {
-	    nchan[0] --;
-	    nPar -=2;
-	    ndims -=2;
-	    continue;
+	  if (jj == 0 && rv == EXIT_SUCCESS) { // Create directory on first profile only
+	    strcpy(root, p.basename);
+	    sprintf(root, "%d_%d", (int)integration->get_epoch().intday(), (int)archive->get_centre_frequency());
+	    mkdir(root, 0700);
+	    sprintf(root, "%d_%d/chains-", (int)integration->get_epoch().intday(), (int)archive->get_centre_frequency());
+	    // Copy config file                                                                                           
+	    sprintf(confname,"%s.config", root);
+	    ifstream  src("config.txt", ios::binary);
+	    ofstream  dst(confname,   ios::binary);
+	    dst << src.rdbuf();
 	  }
-	  freq.push_back(integration->get_Profile(0, ii)->get_centre_frequency());
-	  for (int ibin=0; ibin< archive->get_nbin(); ibin++) {
-	    phase[ichan].push_back((ibin+.5)*(period/(double) archive->get_nbin()));
-	    I[ichan].push_back(integration->get_Profile(0,ii)->get_amps()[ibin%nbin] / integration->get_Profile(0,ii)->max());
-	    //cout << ibin << " " << phase[ichan][ibin] << " " << I[ichan][ibin] << endl;
-	    //cout << ibin << " " <<I.back() << " " << 0.5 * atan(U.back(),  Q.back()) <<endl;
-	    //if (L.back() > max_L) max_L = L.back();
+
+	  chan_idx[jj] = nchan;
+	  for (int ii=0; ii<archive->get_nchan(); ii++) {
+	    //Skip profile with zero-weight
+	    if (integration->get_Profile(0,ii)->get_weight() == 0.0) {
+	      chan_idx[jj]--;
+	      nPar -=2;
+	      ndims -=2;
+	      continue;
+	    }
+	    freq.push_back(integration->get_Profile(0, ii)->get_centre_frequency());
+	    for (int ibin=0; ibin< archive->get_nbin(); ibin++) {
+	      phase[ichan].push_back((ibin+.5)*(period/(double) archive->get_nbin()));
+	      I[ichan].push_back(integration->get_Profile(0,ii)->get_amps()[ibin%nbin] / integration->get_Profile(0,ii)->max());
+	      //cout << ibin << " " << phase[ichan][ibin] << " " << I[ichan][ibin] << endl;
+	      //cout << ibin << " " <<I.back() << " " << 0.5 * atan(U.back(),  Q.back()) <<endl;
+	      //if (L.back() > max_L) max_L = L.back();
+	    }
+	    RMS_I.push_back(sqrt(std_variance[0][ii]));
+	    scale.push_back(integration->get_Profile(0,ii)->max());
+	    ichan ++;
 	  }
-	  RMS_I.push_back(sqrt(std_variance[0][ii]));
-	  scale.push_back(integration->get_Profile(0,ii)->max());
-	  ichan ++;
 	}
-
 
 
 	// Init struct
-	context = init_struct(nchan, period, DM, nbin, phase, freq, I, RMS_I, scale, cfreq);
+	context = init_struct(chan_idx, period, DM, nbin, phase, freq, I, RMS_I, scale, cfreq);
 
 	MNStruct *par = ((MNStruct *)context);
 	
@@ -241,7 +218,46 @@ int main(int argc, char *argv[])
 
 	
 	// calling MultiNest
-	nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike, dumper, context);
+	nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
+
+	
+#if 0
+	if () {
+	  Settings settings;
+
+	  settings.nDims         = ndims;
+	  settings.nDerived      = 1;
+	  settings.nlive         = 500;
+	  settings.num_repeats   = settings.nDims*5;
+	  settings.do_clustering = false;
+	  settings.precision_criterion = 1e-3;
+	  settings.base_dir      = "chains";
+	  settings.file_root     = "test";
+	  settings.write_resume  = false;
+	  settings.read_resume   = false;
+	  settings.write_live    = true;
+	  settings.write_dead    = false;
+	  settings.write_stats   = false;
+	  settings.equals        = true;
+	  settings.posteriors    = true;
+	  settings.cluster_posteriors = false;
+	  settings.feedback      = 1;
+	  settings.update_files  = settings.nlive;
+	  settings.boost_posterior= 5.0;
+
+	  setup_loglikelihood();
+	  run_polychord(loglikelihood, prior, settings) ;
+
+	}
+#endif
+
+	if(rank == 0) {
+	  read_stats(root, ndims, par);
+	  get_scatter_chi(par);
+	}
+
+	MPI_Finalize();
+
 }
 
 /***********************************************************************************************************************/
