@@ -33,7 +33,6 @@ void ScatterLike_MN(double *Cube, int &ndim, int &npars, double &lnew, void *con
 	  for (unsigned int i = 0; i < chan_idx[jj]; i++) {
 	    Cube[4 + ichan*2 + jj*2] = Cube[4 + ichan*2 + jj*2] * (par->r_amp[1] - par->r_amp[0]) + par->r_amp[0];
 	    par->A[ichan] = Cube[4 + ichan*2 + jj*2];
-	    par->A[ichan] = pow(10, par->A[ichan]);
        	    Cube[5  + ichan*2 + jj*2] = Cube[5 + ichan*2 + jj*2] * (par->r_b[1] - par->r_b[0]) + par->r_b[0];
 	    par->b[ichan] = Cube[5 + ichan*2 + jj*2];
 

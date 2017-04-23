@@ -22,6 +22,7 @@ double get_scatter_chi(MNStruct *par) {
   double *freq = par->freq;
   double *rmsI = par->rmsI;
   int nbin = par->nbin;
+  int npts=0;
   double cfreq = par->cfreq[0];
   double tau;
   double t1, t3, t5, t9, t10, t19, delay, T0, result;
@@ -36,16 +37,16 @@ double get_scatter_chi(MNStruct *par) {
       double *I = par->I[ichan];
       delay = DM * 4.14879e3 * (1./(par->freq[ichan]*par->freq[ichan])); // delay in s
       tau = tau1 * pow((par->freq[ichan]*1e-3), gamma);
-      
+
       T0 = t0_inf + delay/period * 360.; // T0 in deg
       T0 -= DM * 4.14879e3 * (1./(cfreq*cfreq)) / period * 360.; // TODO
-      
+
       while (T0 < 100) T0+=360.;
       while (T0 > 620.) T0-=360;
       
-      A = par->A[ichan];
+      A = pow(10, par->A[ichan]);
       b = par->b[ichan];
-      
+
       double win = 120; // Set a restricted window for chi**2 calculation 
       win_lo = T0 - win / 3.; win_hi = T0 + win / 2.;
       while (win_lo > 540) win_lo -= 360;  while (win_hi > 540) win_hi -= 360;
@@ -70,12 +71,16 @@ double get_scatter_chi(MNStruct *par) {
 	t19 = erf((0.2e1 * t1 - t3) / sigma / tau / 0.2e1);
 	result = (A*t9 * t10 * sigma * (t19 + 0.1e1) / 0.2e1+b);
 	chi += pow((I[ii] - result)* par->scale[ichan] / par->rmsI[ichan], 2); 
+	npts++;
 	//cout << jj <<  " " << i << " "<< ii << " " << I[ii] << " " << chi <<endl; 
+
 	if (par->do_plot) cout << ichan << " "<< j << " " << I[ii] << "  " << result << " " << chi << endl;
+	
 	//cout << ichan << " " << ii << " " << I[ii] << " " << result << endl;
       }
       ichan++;
     }
   }
+  if (par->do_plot) cout << "Chi**2 = "<< chi << " Npts = " << npts << endl;
   return chi;
 }
