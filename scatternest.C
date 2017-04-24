@@ -220,6 +220,7 @@ int main(int argc, char *argv[])
 	par->r_amp = p.amp;
 	par->nbin = nbin;
 	par->r_b = p.b;
+	par->win = p.win;
 
 	
 	// calling MultiNest

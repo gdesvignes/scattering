@@ -30,6 +30,7 @@ typedef struct {
   double *t0_inf;
   double *A;
   double *b;
+  double win;
   
   double *r_sigma;
   double *r_tau;

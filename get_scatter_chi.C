@@ -47,8 +47,7 @@ double get_scatter_chi(MNStruct *par) {
       A = pow(10, par->A[ichan]);
       b = par->b[ichan];
 
-      double win = 120; // Set a restricted window for chi**2 calculation 
-      win_lo = T0 - win / 3.; win_hi = T0 + win / 2.;
+      win_lo = T0 - par->win / 3.; win_hi = T0 + par->win / 2.;
       while (win_lo > 540) win_lo -= 360;  while (win_hi > 540) win_hi -= 360;
       int lobin = (int)(win_lo * nbin/360.);
       int hibin = (int)(win_hi * nbin/360.);

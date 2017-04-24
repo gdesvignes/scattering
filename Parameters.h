@@ -23,6 +23,7 @@ typedef struct param {
   double *efac;
   double *amp;
   double *b;
+  double win;
   // Data
   int nchan;
   int bscrunch;
