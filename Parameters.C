@@ -17,6 +17,8 @@ int readParameters(param *p, char *paramFile){
         return EXIT_FAILURE;
     }
 
+    p->sampler = g_key_file_get_integer(gkf,"sampler","sampler",NULL);
+
     p->IS = g_key_file_get_integer(gkf,"multinest","IS",NULL);
     p->nlive = g_key_file_get_integer(gkf,"multinest","nlive",NULL);
     p->ceff = g_key_file_get_integer(gkf,"multinest","ceff",NULL);

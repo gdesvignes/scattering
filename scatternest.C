@@ -23,9 +23,12 @@
 using namespace std;
 using namespace Pulsar;
 
-#ifdef HAVE_POLYCHORD
+//#ifdef HAVE_POLYCHORD
 #include "interfaces.hpp"
-#endif
+#include "scatter_likelihood_PC.h"
+//#endif
+
+MNStruct *sp;
 
 /************************************************* dumper routine ******************************************************/
 void dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSlogZ, double &logZerr, void *context)
@@ -109,6 +112,7 @@ int main(int argc, char *argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+	int sampler = 0;
 	int rv = -1;
 	int nfiles = argc - 1;
 	param p;
@@ -119,6 +123,7 @@ int main(int argc, char *argv[])
 	rv = readParameters(&p, "config.txt");
 	
 	if (rv == EXIT_SUCCESS) {
+	  sampler = p.sampler;
 	  IS = p.IS;
 	  nlive = p.nlive;
 	  ceff = p.ceff;
@@ -218,13 +223,10 @@ int main(int argc, char *argv[])
 
 	
 	// calling MultiNest
-	nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
-
-	
-#if 0
-	if () {
+	if (sampler==0)
+	  nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
+	else if (sampler==1) {
 	  Settings settings;
-
 	  settings.nDims         = ndims;
 	  settings.nDerived      = 1;
 	  settings.nlive         = 500;
@@ -233,11 +235,11 @@ int main(int argc, char *argv[])
 	  settings.precision_criterion = 1e-3;
 	  settings.base_dir      = "chains";
 	  settings.file_root     = "test";
-	  settings.write_resume  = false;
-	  settings.read_resume   = false;
+	  settings.write_resume  = true;
+	  settings.read_resume   = true;
 	  settings.write_live    = true;
 	  settings.write_dead    = false;
-	  settings.write_stats   = false;
+	  settings.write_stats   = true;
 	  settings.equals        = true;
 	  settings.posteriors    = true;
 	  settings.cluster_posteriors = false;
@@ -245,11 +247,13 @@ int main(int argc, char *argv[])
 	  settings.update_files  = settings.nlive;
 	  settings.boost_posterior= 5.0;
 
-	  setup_loglikelihood();
-	  run_polychord(loglikelihood, prior, settings) ;
-
+	  //setup_loglikelihood();
+	  sp = par;
+	  run_polychord(ScatterLike_PC, prior, settings) ;
+	} else {
+	  fprintf(stderr, "No sampler selected\n");
+	  exit(-1);
 	}
-#endif
 
 	if(rank == 0) {
 	  read_stats(root, ndims, par);

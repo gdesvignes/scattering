@@ -1,3 +1,7 @@
+
+#ifndef SCATTERING_H_INCLUDED
+#define SCATTERING_H_INCLUDED
+
 #include<vector>
 
 using namespace std;
@@ -44,3 +48,5 @@ void ScatterLike_MN(double *Cube, int &ndim, int &npars, double &lnew, void *con
 //void ScatterLike2(double *Cube, int &ndim, int &npars, double &lnew, void *context);
 double get_scatter_chi(MNStruct *par);
 void read_stats(char *filename, int npar, MNStruct *p);
+
+#endif
