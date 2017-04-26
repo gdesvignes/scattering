@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 	
 	// calling MultiNest
 	if (sampler==0)
-	  nested::run(IS, mmodal, ceff, nlive, tol, efr, par->ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
+	  nested::run(IS, mmodal, ceff, nlive, tol, efr, par->ndims, nPar, nClsPar, maxModes, updInt, Ztol, chain, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
 	else if (sampler==1) {
 	  Settings settings;
 	  settings.nDims         = par->ndims;
