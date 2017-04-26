@@ -7,6 +7,8 @@
 using namespace std;
 
 typedef struct {
+  int sampler;
+  int ndims;
 
   int nchan;    /* Number of channels */
   int nbin;

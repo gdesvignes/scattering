@@ -89,7 +89,8 @@ int main(int argc, char *argv[])
 	
 	char confname[128];
 	char filename[128];
-	char root[100] = "chains/eggboxCC-";		// root for output files
+	char root[100]="chains";
+	char chain[100] = "chains/eggboxCC-";		// root for output files
 	int seed = -1;					// random no. generator seed, if < 0 then take the seed from system clock
 	int fb = 1;					// need feedback on standard output?
 	int resume = 1;					// resume from a previous job?
@@ -173,12 +174,12 @@ int main(int argc, char *argv[])
 	  integration->baseline_stats (0, &std_variance);
 
 	  if (jj == 0 && rv == EXIT_SUCCESS) { // Create directory on first profile only
-	    strcpy(root, p.basename);
+	    //strcpy(root, p.basename);
 	    sprintf(root, "%d_%d", (int)integration->get_epoch().intday(), (int)archive->get_centre_frequency());
 	    mkdir(root, 0700);
-	    sprintf(root, "%d_%d/chains-", (int)integration->get_epoch().intday(), (int)archive->get_centre_frequency());
+	    sprintf(chain, "%s/chainsMN-", root);
 	    // Copy config file                                                                                           
-	    sprintf(confname,"%s.config", root);
+	    sprintf(confname,"%s.config", chain);
 	    ifstream  src("config.txt", ios::binary);
 	    ofstream  dst(confname,   ios::binary);
 	    dst << src.rdbuf();
@@ -212,7 +213,7 @@ int main(int argc, char *argv[])
 	context = init_struct(chan_idx, period, DM, nbin, phase, freq, I, RMS_I, scale, cfreq);
 
 	MNStruct *par = ((MNStruct *)context);
-	
+	par->ndims = ndims;
 	par->r_sigma = p.sigma;
 	par->r_tau = p.tau;
 	par->r_DM = p.DM;
@@ -234,8 +235,8 @@ int main(int argc, char *argv[])
 	  settings.num_repeats   = settings.nDims*5;
 	  settings.do_clustering = false;
 	  settings.precision_criterion = 1e-3;
-	  settings.base_dir      = "chains";
-	  settings.file_root     = "test";
+	  settings.base_dir.assign(root);
+	  settings.file_root     = "chainsPC";
 	  settings.write_resume  = true;
 	  settings.read_resume   = true;
 	  settings.write_live    = true;
