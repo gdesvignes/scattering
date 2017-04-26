@@ -46,7 +46,6 @@ void read_stats(char *root, int npar, MNStruct *p)
     std::vector<double> paramlist(begin,eof);
     
     double like = paramlist[p->ndims+1];
-    printf("like = %lf\n", like);
     if(like > maxlike) {
       maxlike = like;
       for (int j=0; j< p->ndims; j++) 

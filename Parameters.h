@@ -24,6 +24,7 @@ typedef struct param {
   double *amp;
   double *b;
   double win;
+  int scatter_index_fixed;
   // Data
   int nchan;
   int bscrunch;

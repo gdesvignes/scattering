@@ -101,13 +101,14 @@ int main(int argc, char *argv[])
 	int maxiter = 0;				// max no. of iterations, a non-positive value means infinity. MultiNest will terminate if either it 
 							// has done max no. of iterations or convergence criterion (defined through tol) has been satisfied
 	void *context = 0;				// not required by MultiNest, any additional information user wants to pass
+	int scatter_index_fixed = 1;
 	int nbin;
 	int ichan = 0;
 	int bscrunch = 1;
 	int nchan = 8;
 	double DM, period;
 	vector< vector<double> > phase, I;
-
+	
 	int rank, size;
         MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -131,6 +132,7 @@ int main(int argc, char *argv[])
 	  efr = p.efr;
 	  nchan = p.nchan;
 	  bscrunch = p.bscrunch;
+	  scatter_index_fixed = p.scatter_index_fixed;
 	}
 	
 	vector <int> chan_idx;
@@ -209,6 +211,8 @@ int main(int argc, char *argv[])
 	}
 
 
+	if (!scatter_index_fixed) {ndims++;nPar++;}
+
 	// Init struct
 	context = init_struct(chan_idx, period, DM, nbin, phase, freq, I, RMS_I, scale, cfreq);
 
@@ -223,14 +227,16 @@ int main(int argc, char *argv[])
 	par->nbin = nbin;
 	par->r_b = p.b;
 	par->win = p.win;
+	par->scatter_index_fixed = scatter_index_fixed;
+
 
 	
 	// calling MultiNest
 	if (sampler==0)
-	  nested::run(IS, mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
+	  nested::run(IS, mmodal, ceff, nlive, tol, efr, par->ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, outfile, initMPI, logZero, maxiter, ScatterLike_MN, dumper, context);
 	else if (sampler==1) {
 	  Settings settings;
-	  settings.nDims         = ndims;
+	  settings.nDims         = par->ndims;
 	  settings.nDerived      = 1;
 	  settings.nlive         = 500;
 	  settings.num_repeats   = settings.nDims*5;
@@ -259,7 +265,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(rank == 0) {
-	  read_stats(root, ndims, par);
+	  read_stats(root, par->ndims, par);
 	  get_scatter_chi(par);
 	}
 

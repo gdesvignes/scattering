@@ -39,6 +39,7 @@ int readParameters(param *p, char *paramFile){
     p->nchan = g_key_file_get_integer(gkf,"params","nchan", NULL);
     p->bscrunch = g_key_file_get_integer(gkf,"params","bscrunch", NULL);
     p->win = g_key_file_get_double(gkf,"params","win", NULL);
+    p->scatter_index_fixed = g_key_file_get_integer(gkf,"params","scatter_index_fixed", NULL);
 
     fprintf (stderr, "Finished reading config file %s\n", paramFile);
 

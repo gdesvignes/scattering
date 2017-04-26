@@ -17,6 +17,7 @@ typedef struct {
   double period;
   double DM;
   double tau1;
+  double gamma;
   double max_phase;
   int nfiles;  
   int *chan_idx;
@@ -33,7 +34,7 @@ typedef struct {
   double *A;
   double *b;
   double win;
-  
+  int scatter_index_fixed;
   double *r_sigma;
   double *r_tau;
   double *r_DM;

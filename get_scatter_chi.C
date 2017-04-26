@@ -13,7 +13,7 @@ double get_scatter_chi(MNStruct *par) {
   double chi = 0.0;
   int ii, ichan=0,nchans=0;
   double A, b, sigma, t0_inf;
-  double gamma = -4.0;
+  double gamma = par->gamma;
   double tau1 = par->tau1;
   double DM = par->DM;
   tau1 =  tau1 * 360./par->period;
