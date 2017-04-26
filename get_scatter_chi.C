@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-
+#include <fstream>
 #include "scattering.h"
 #include <complex>
 
@@ -27,6 +27,11 @@ double get_scatter_chi(MNStruct *par) {
   double tau;
   double t1, t3, t5, t9, t10, t19, delay, T0, result;
   double win_lo, win_hi;
+  ofstream output_file;
+
+  if (par->do_plot) {
+    output_file.open("profiles.ascii");
+  }
   
   for (unsigned int jj = 0; jj < par->nfiles; jj++) { // Loop over files
     sigma = par->sigma[jj];
@@ -73,13 +78,16 @@ double get_scatter_chi(MNStruct *par) {
 	npts++;
 	//cout << jj <<  " " << i << " "<< ii << " " << I[ii] << " " << chi <<endl; 
 
-	if (par->do_plot) cout << ichan << " "<< j << " " << I[ii] << "  " << result << " " << chi << endl;
+	if (par->do_plot) output_file << ichan << " "<< j << " " << I[ii] << "  " << result << " " << chi << endl;
 	
 	//cout << ichan << " " << ii << " " << I[ii] << " " << result << endl;
       }
       ichan++;
     }
   }
-  if (par->do_plot) cout << "Chi**2 = "<< chi << " Npts = " << npts << endl;
+  if (par->do_plot) {
+    cout << "Chi**2 = "<< chi << " Npts = " << npts << endl;
+    output_file.close();
+  }
   return chi;
 }

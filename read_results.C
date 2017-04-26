@@ -25,38 +25,28 @@ void read_stats(char *root, int npar, MNStruct *p)
 {
 
   int i, ipar=0,ichan, nmodes;
-  string line, a,b,c;
+  string line;
   char filename[256];
   double maxlike = -1.0*pow(10.0,10);
-  double val, val_err;
   double *tmp_cube = new double [p->ndims];
 
   if (p->sampler==0) // MultiNest
-    sprintf(filename, "%schainsMN-phys_live.points", root);
+    sprintf(filename, "%s/chainsMN-phys_live.points", root);
   if (p->sampler==1) // PolyChord
-    sprintf(filename, "%schainsPC-phys_live.txt", root);
+    sprintf(filename, "%s/chainsPC_phys_live.txt", root);
 
   //TODO
   ifstream physlive_file(filename);
 
-  if (!physlive_file.is_open()) cerr << "Error opening: " << filename << endl;
+  if (!physlive_file.is_open()) {cerr << "Error opening: " << filename << endl; return;}
 
-  // count the newlines with an algorithm specialized for counting:
-  unsigned line_count = count( istream_iterator<char>(physlive_file),
-			       istream_iterator<char>(), 
-			       '\n');
-
-  cout << "Lines phys_live: " << line_count << endl;
-  
-  // Get the params corresponding to the ML
-  for (i=0; i< line_count; i++) { 
-    std::string line;
-    getline(physlive_file,line);
+  while (getline(physlive_file,line)) {
     std::istringstream myStream( line );
     std::istream_iterator< double > begin(myStream),eof;
     std::vector<double> paramlist(begin,eof);
     
-    double like = paramlist[p->ndims];
+    double like = paramlist[p->ndims+1];
+    printf("like = %lf\n", like);
     if(like > maxlike) {
       maxlike = like;
       for (int j=0; j< p->ndims; j++) 

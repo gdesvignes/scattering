@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
 	context = init_struct(chan_idx, period, DM, nbin, phase, freq, I, RMS_I, scale, cfreq);
 
 	MNStruct *par = ((MNStruct *)context);
+	par->sampler = sampler;
 	par->ndims = ndims;
 	par->r_sigma = p.sigma;
 	par->r_tau = p.tau;
