@@ -158,13 +158,13 @@ int main(int argc, char *argv[])
 	  if (rank==0)  cerr << "Archive loaded "<< endl;
 	  
 	  archive->tscrunch();
-	  archive->fscrunch_to_nchan(nchan);
+	  if (archive->get_nchan() > nchan) archive->fscrunch_to_nchan(nchan);
 	  if (bscrunch > 1) archive->bscrunch(bscrunch);
 	  //int nchan = archive->get_nchan();
 	  nbin = archive->get_nbin();
 	  DM = archive->get_dispersion_measure();
 	  cerr << nbin<< " "<< DM << endl;
-	  if( archive->get_state() != Signal::Stokes) archive->convert_state(Signal::Stokes);
+	  if(archive->get_npol() > 1 && archive->get_state() != Signal::Stokes) archive->convert_state(Signal::Stokes);
 	  archive->remove_baseline();
 	  cfreq.push_back(archive->get_centre_frequency());
 	
