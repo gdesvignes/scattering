@@ -146,7 +146,6 @@ int main(int argc, char *argv[])
 
 	for (int jj=0; jj<nfiles; jj++) {
 
-	  nPar = 2 + (2 + nchan * 2) * nfiles; // DM and scattering are assumed to be constant here; width, phase are profile dependent 
 	  ndims = nPar;
 	  
 	  strcpy(filename, argv[jj+1]);
@@ -167,6 +166,9 @@ int main(int argc, char *argv[])
 	  if(archive->get_npol() > 1 && archive->get_state() != Signal::Stokes) archive->convert_state(Signal::Stokes);
 	  archive->remove_baseline();
 	  cfreq.push_back(archive->get_centre_frequency());
+	  
+	  nPar = 2 + (2 + archive->get_nchan() * 2) * nfiles;
+	  ndims = nPar;
 	
 	  // Get Data
 	  Pulsar::Integration* integration = archive->get_Integration(0);
@@ -187,7 +189,7 @@ int main(int argc, char *argv[])
 	    dst << src.rdbuf();
 	  }
 
-	  chan_idx[jj] = nchan;
+	  chan_idx[jj] = archive->get_nchan();
 	  for (int ii=0; ii<archive->get_nchan(); ii++) {
 	    //Skip profile with zero-weight
 	    if (integration->get_Profile(0,ii)->get_weight() == 0.0) {
