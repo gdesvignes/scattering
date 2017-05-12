@@ -11,7 +11,7 @@ typedef struct {
   int ndims;
 
   int nchan;    /* Number of channels */
-  int nbin;
+  int* nbin;
   int do_plot;
   
   double period;
@@ -47,7 +47,7 @@ typedef struct {
 
 } MNStruct;
 
-MNStruct* init_struct(vector<int> chan_idx, double period, double DM, int nbin, vector< vector<double> > phase, vector<double> freq, vector< vector<double> >  I, vector<double> rmsI, vector<double> scale, vector<double> cfreq );
+MNStruct* init_struct(vector<int> chan_idx, double period, double DM, vector<int> nbin, vector< vector<double> > phase, vector<double> freq, vector< vector<double> >  I, vector<double> rmsI, vector<double> scale, vector<double> cfreq );
 void ScatterLike_MN(double *Cube, int &ndim, int &npars, double &lnew, void *context);
 //void ScatterLike2(double *Cube, int &ndim, int &npars, double &lnew, void *context);
 double get_scatter_chi(MNStruct *par);

@@ -34,7 +34,7 @@ void prior (double cube[], double theta[], int nDims,  void *context)
   ipar++;
   
   if(!sp->scatter_index_fixed) {
-    theta[ipar] = cube[ipar] * (1.6) - 4.8;
+    theta[ipar] = cube[ipar] * (2.) - 5;
     ipar++;
   }
 

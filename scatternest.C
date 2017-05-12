@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 	}
 	
 	vector <int> chan_idx;
+	vector <int> nbin_ar;
 	vector <double> RMS_I;
 	vector <double> scale;
 	vector <double> cfreq, freq;
@@ -144,13 +145,11 @@ int main(int argc, char *argv[])
 	phase.resize(nchan * nfiles);
 	I.resize(nchan * nfiles);
 
-	for (int jj=0; jj<nfiles; jj++) {
+	ndims = 2; nPar = 2;
 
-	  ndims = nPar;
-	  
+	for (int jj=0; jj<nfiles; jj++) {
 	  strcpy(filename, argv[jj+1]);
 	  if (rank==0) cerr << "Filename: "<< filename<< " " << nchan << endl;
-
 
 	  Reference::To< Archive > archive = Archive::load( filename );
 	  if( !archive ) return -1;
@@ -167,8 +166,8 @@ int main(int argc, char *argv[])
 	  archive->remove_baseline();
 	  cfreq.push_back(archive->get_centre_frequency());
 	  
-	  nPar = 2 + (2 + archive->get_nchan() * 2) * nfiles;
-	  ndims = nPar;
+	  ndims += 2;
+	  nPar += 2;
 	
 	  // Get Data
 	  Pulsar::Integration* integration = archive->get_Integration(0);
@@ -194,13 +193,16 @@ int main(int argc, char *argv[])
 	    //Skip profile with zero-weight
 	    if (integration->get_Profile(0,ii)->get_weight() == 0.0) {
 	      chan_idx[jj]--;
-	      nPar -=2;
-	      ndims -=2;
 	      continue;
 	    }
 	    freq.push_back(integration->get_Profile(0, ii)->get_centre_frequency());
-	    for (int ibin=0; ibin< archive->get_nbin(); ibin++) {
-	      phase[ichan].push_back((ibin+.5)*(period/(double) archive->get_nbin()));
+	    nbin_ar.push_back(nbin);
+
+	    ndims += 2;
+	    nPar += 2;
+
+	    for (int ibin=0; ibin< nbin; ibin++) {
+	      phase[ichan].push_back((ibin+.5)*(period/(double) nbin));
 	      I[ichan].push_back(integration->get_Profile(0,ii)->get_amps()[ibin%nbin] / integration->get_Profile(0,ii)->max());
 	      //cout << ibin << " " << phase[ichan][ibin] << " " << I[ichan][ibin] << endl;
 	      //cout << ibin << " " <<I.back() << " " << 0.5 * atan(U.back(),  Q.back()) <<endl;
@@ -216,7 +218,7 @@ int main(int argc, char *argv[])
 	if (!scatter_index_fixed) {ndims++;nPar++;}
 
 	// Init struct
-	context = init_struct(chan_idx, period, DM, nbin, phase, freq, I, RMS_I, scale, cfreq);
+	context = init_struct(chan_idx, period, DM, nbin_ar, phase, freq, I, RMS_I, scale, cfreq);
 
 	MNStruct *par = ((MNStruct *)context);
 	par->sampler = sampler;
@@ -226,7 +228,7 @@ int main(int argc, char *argv[])
 	par->r_DM = p.DM;
 	par->r_t0_inf = p.t0_inf;
 	par->r_amp = p.amp;
-	par->nbin = nbin;
+	//par->nbin = nbin;
 	par->r_b = p.b;
 	par->win = p.win;
 	par->scatter_index_fixed = scatter_index_fixed;

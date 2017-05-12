@@ -35,7 +35,6 @@ void read_stats(char *root, int npar, MNStruct *p)
   if (p->sampler==1) // PolyChord
     sprintf(filename, "%s/chainsPC_phys_live.txt", root);
 
-  //TODO
   ifstream physlive_file(filename);
 
   if (!physlive_file.is_open()) {cerr << "Error opening: " << filename << endl; return;}
@@ -59,7 +58,7 @@ void read_stats(char *root, int npar, MNStruct *p)
 
   p->tau1 = tmp_cube[ipar]; ipar++;
   p->DM = tmp_cube[ipar]; ipar++;
-            
+  if (!p->scatter_index_fixed) {p->gamma = tmp_cube[ipar]; ipar++;}
   for (unsigned int j = 0; j < p->nfiles; j++) {
     p->sigma[j] = tmp_cube[ipar];ipar++;
     p->t0_inf[j] = tmp_cube[ipar];ipar++;

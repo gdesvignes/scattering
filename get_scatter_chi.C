@@ -21,9 +21,9 @@ double get_scatter_chi(MNStruct *par) {
   int *chan_idx = par->chan_idx;
   double *freq = par->freq;
   double *rmsI = par->rmsI;
-  int nbin = par->nbin;
+  int *nbin = par->nbin;
   int npts=0;
-  double cfreq = par->cfreq[0];
+  double *cfreq = par->cfreq;
   double tau;
   double t1, t3, t5, t9, t10, t19, delay, T0, result;
   double win_lo, win_hi;
@@ -40,11 +40,12 @@ double get_scatter_chi(MNStruct *par) {
     nchans += chan_idx[jj];
     for (unsigned int i = 0; i < chan_idx[jj]; i++) {
       double *I = par->I[ichan];
-      delay = DM * 4.14879e3 * (1./(par->freq[ichan]*par->freq[ichan])); // delay in s
+      delay = DM * 4.14879e3 * (1./(par->freq[ichan]*par->freq[ichan]) - 1./(cfreq[jj]*cfreq[jj]) ); // delay in s
+      T0 = t0_inf + delay/period * 360; // T0 in deg
+
       tau = tau1 * pow((par->freq[ichan]*1e-3), gamma);
 
-      T0 = t0_inf + delay/period * 360.; // T0 in deg
-      T0 -= DM * 4.14879e3 * (1./(cfreq*cfreq)) / period * 360.; // TODO
+      //cout << jj << " " << i << " "<< delay/period*360. << endl;
 
       while (T0 < 100) T0+=360.;
       while (T0 > 620.) T0-=360;
@@ -53,17 +54,20 @@ double get_scatter_chi(MNStruct *par) {
       b = par->b[ichan];
 
       win_lo = T0 - par->win / 3.; win_hi = T0 + par->win / 2.;
+      if (par->freq[ichan] < 2000.) {
+	win_lo = T0 - 160/3; win_hi = T0 + 80;
+      }
       while (win_lo > 540) win_lo -= 360;  while (win_hi > 540) win_hi -= 360;
-      int lobin = (int)(win_lo * nbin/360.);
-      int hibin = (int)(win_hi * nbin/360.);
+      int lobin = (int)(win_lo * nbin[i]/360.);
+      int hibin = (int)(win_hi * nbin[i]/360.);
       //printf("lobin = %d hibin=%d\n", lobin,hibin);
       
-      if (lobin>hibin && lobin - nbin > 0) lobin-= nbin; 
+      if (lobin>hibin && lobin - nbin[i] > 0) lobin-= nbin[i]; 
       
       for (unsigned int j = lobin; j < hibin; j++) {
 	ii = j;
-	while(ii>=nbin) ii -= nbin;
-	double dt = (j*360./(double)nbin - T0) ;
+	while(ii>=nbin[i]) ii -= nbin[i];
+	double dt = (j*360./(double)nbin[i] - T0) ;
 	while (dt < 100) dt+=360.;
 	while (dt > 180.) dt-=360.;
 	
@@ -78,7 +82,7 @@ double get_scatter_chi(MNStruct *par) {
 	npts++;
 	//cout << jj <<  " " << i << " "<< ii << " " << I[ii] << " " << chi <<endl; 
 
-	if (par->do_plot) output_file << ichan << " "<< j << " " << I[ii] << "  " << result << " " << chi << endl;
+	if (par->do_plot) output_file << ichan << " "<< j/(float)nbin[i] << " " << I[ii] << "  " << result << " " << chi << endl;
 	
 	//cout << ichan << " " << ii << " " << I[ii] << " " << result << endl;
       }
